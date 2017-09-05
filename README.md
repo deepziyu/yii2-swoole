@@ -54,6 +54,7 @@ _为赋予 Yii2 框架协程异步能力而生。_
 swoole.php 示例如下：
 
 ```php
+
 defined('YII_DEBUG') or define('YII_DEBUG', true);
 defined('YII_ENV') or define('YII_ENV', 'dev');
 defined('WEB_ROOT') or define('WEB_ROOT', dirname(__DIR__) . '/web'); //web目录的路径，用户访问的静态文件都放这里
@@ -113,4 +114,33 @@ deepziyu\yii\swoole\server\Server::run($config);
 ```
 php swoole.php start|stop|reload|reload-task
 ```
+
+## TODO
+
+- MysqlPool 目前不支持事物 (transaction)。
+- MysqlPool、RedisPool 连接池用满了，目前是用 sleep() 进行排队等待，超过等待次数后，报异常。
+- MysqlPool 目前不支持主从。
+
+## 已知Bug
+
+- new ActiveRecord([]); 中会触发 __set() 魔术方法中调用协程Client，导致两个问题：
+
+  1、 首次实例化会导致协程挂起。
+
+  2、 如果 SQL 报错直接导致 work 进程终止。
+  
+  实例代码：
+  ```php
+      class OneModel extend ActiveRecord{
+          public static function tableName()
+          {
+             return 'some-table do not exist';
+          }
+      }
+      //导致进程终止
+      $model = new SystemSetting([
+          'some-att'=>'some-value',
+      ]);
+  ```
+
 

@@ -123,7 +123,8 @@ class MysqlPoolPdo extends PDO
             return [];
         }
         if($fetchMode == PDO::FETCH_COLUMN){
-            $key = array_shift(array_keys($data->result[0]));
+            $keys = array_keys($data->result[0]);
+            $key = array_shift($keys);
             return ArrayHelper::getColumn($data->result,$key);
         }
         return $data->result;
