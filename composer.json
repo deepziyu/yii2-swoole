@@ -1,0 +1,25 @@
+{
+  "name": "deepziyu/yii2-swoole",
+  "description": "full solutions making yii2-framework run on swoole with coroutine",
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "deepziyu",
+      "email": "lizhenju.china@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.0.13",
+    "yiisoft/yii2": "~2.0.9",
+    "yiisoft/yii2-redis": "~2.0.0"
+  },
+  "require-dev": {
+    "eaglewu/swoole-ide-helper": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "deepziyu\\yii\\swoole\\": ""
+    }
+  }
+}
+
