@@ -4,6 +4,7 @@ _为赋予 Yii2 框架协程异步能力而生。_
 
 此插件基于 swoole (v2.0) 底层实现的协程，改造 Yii2 的核心代码，使开发者无感知，以及在不改动业务代码的情况下，用上 swoole 的异步IO能力。
 
+
 ## 特性
 
 - 协程 MySQL 客户端、连接池
@@ -15,6 +16,7 @@ _为赋予 Yii2 框架协程异步能力而生。_
 - 异步文件日志组件
 
 - 业务代码和 swoole 主进程分离
+
 
 ## 安装
 
@@ -51,6 +53,8 @@ _为赋予 Yii2 框架协程异步能力而生。_
 
 新建一个启动文件即可。
 
+启动文件清晰的展现出本插件的工作、流程原理。动手写这个文件有助于你更加理解本插件。
+
 swoole.php 示例如下：
 
 ```php
@@ -63,7 +67,9 @@ require(__DIR__ . '/../../vendor/autoload.php');
 
 $config = [
     'id' => 'api-test-hello',
-    'setting' => [
+    'setting' => [ 
+        // swoole_server 的配置。
+        // @see 其他配置项见 https://wiki.swoole.com/wiki/page/274.html
         'daemonize'=>0,
         'worker_num'=>2,
         'task_worker_num' => 1,
@@ -78,7 +84,7 @@ $config = [
     'bootstrap' => [
         'class' => 'deepziyu\yii\swoole\bootstrap\YiiWeb',
         'config' => function(){
-        
+            // 用闭包是为了延迟加载
             // 返回 Yii 的各个组件的配置
             require_once(__DIR__ . '/../../vendor/autoload.php');
             require_once(__DIR__ . '/../../yii-swoole/Yii.php');
@@ -105,6 +111,7 @@ $config = [
 
 ];
 
+// 配置了这么多，最终还是逃不过一 run()
 deepziyu\yii\swoole\server\Server::run($config);
 
 ```
@@ -129,7 +136,7 @@ php swoole.php start|stop|reload|reload-task
 
   2、 如果 SQL 报错直接导致 work 进程终止。
   
-  实例代码：
+  BUG代码：
   ```php
       class OneModel extend ActiveRecord{
           public static function tableName()
@@ -138,7 +145,7 @@ php swoole.php start|stop|reload|reload-task
           }
       }
       //导致进程终止
-      $model = new SystemSetting([
+      $model = new OneModel([
           'some-att'=>'some-value',
       ]);
   ```
