@@ -23,7 +23,7 @@ class SwooleCache extends Cache
     /**
      * the max size of cache is limited by this const
      */
-    const DATA_LEN = 2024;
+    public static $dataLength = 2024;
 
     /**
      * @var Table
@@ -58,14 +58,15 @@ class SwooleCache extends Cache
         parent::init();
     }
 
-    public static function initCacheTable($size = 1024)
+    public static function initCacheTable($size = 1024, $dataLength = 8192)
     {
         if( $size%1024 !== 0){
             throw new InvalidValueException("swoole_table::size error ：$size");
         }
+        static::$dataLength = $dataLength;
         $table = new Table($size);
         $table->column('expire', Table::TYPE_STRING, 11);
-        $table->column('data', Table::TYPE_STRING,static::DATA_LEN);
+        $table->column('data', Table::TYPE_STRING,static::$dataLength);
         $table->create();
         return $table;
     }
@@ -87,8 +88,10 @@ class SwooleCache extends Cache
         if($duration < 1 || $duration > $this->maxLive){
             $duration = $this->maxLive;
         }
-        if(strlen($value) > static::DATA_LEN){
-            throw new Exception('too long for cache value');
+        if(strlen($value) > static::$dataLength){
+            Yii::info("key: [$key] is too long for SwooleCache");
+            //TODO Is time to use Redis cache as 2-level cache
+            return false;
         }
         return $this->tableInstance->set($key,[
             'expire' => $duration + time(),

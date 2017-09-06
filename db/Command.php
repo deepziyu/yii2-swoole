@@ -108,7 +108,6 @@ class Command extends \yii\db\Command
         } else {
             $pdo = $this->db->getMasterPdo();
         }
-        var_dump($sql);
         return $pdo->doQuery($sql, $isExecute, $method, $fetchMode);
     }
 }

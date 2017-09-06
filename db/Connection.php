@@ -10,6 +10,8 @@ class Connection extends \yii\db\Connection
 {
     public $commandClass = 'deepziyu\yii\swoole\db\Command';
     public $pdoClass = 'deepziyu\yii\swoole\db\MysqlPoolPdo';
+    public $enableSchemaCache = true;
+
     /**
      * It work when you reload mysql schema
      * @see YiiWeb::onYiiEvent()
