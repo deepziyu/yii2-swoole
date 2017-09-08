@@ -33,7 +33,7 @@ class MysqlPoolPdo extends PDO
 
     protected $options = [];
 
-    private $methodSupport = ['fetch','fetchAll'];
+    private $methodSupport = ['fetch','fetchAll','fetchColumn'];
 
     /**
      * Whether currently in a transaction
@@ -128,6 +128,19 @@ class MysqlPoolPdo extends PDO
             return ArrayHelper::getColumn($data->result,$key);
         }
         return $data->result;
+    }
+
+    /**
+     * @param $data
+     * @param $fetchMode
+     * @return mixed|null
+     */
+    protected function fetchColumn($data,$fetchMode)
+    {
+        if( empty($data->result[0]) ){
+            return null;
+        }
+        return array_shift($data->result[0]);
     }
 
     /**

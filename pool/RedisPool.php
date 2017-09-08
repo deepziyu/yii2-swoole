@@ -99,8 +99,9 @@ class RedisPool extends Component
      * @return RedisResultData
      * @throws \Exception
      */
-    public function executeCommand($redisCommand, $params = [])
+    public function executeCommand($redisCommand, ...$params)
     {
+        $connect = null;
         try {
             $connect = $this->getConnect();
             $res = $connect->{$redisCommand}(...$params);
