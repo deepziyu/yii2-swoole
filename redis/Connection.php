@@ -65,7 +65,7 @@ class Connection extends \yii\redis\Connection
 
     public function __call($name, $params)
     {
-        $redisCommand = strtoupper(Inflector::camel2words($name, false));
+        $redisCommand = strtoupper($name);
         if (in_array($redisCommand, $this->redisCommands)) {
             return $this->executeCommand($redisCommand, $params);
         } else {
@@ -76,7 +76,7 @@ class Connection extends \yii\redis\Connection
     public function executeCommand($name, $params = [])
     {
         $this->open();
-        $data = $this->_redisPool->executeCommand($name, $params);
+        $data = $this->_redisPool->executeCommand($name, ...$params);
         if($data->errCode !== 0){
             $message = ($this->hostname . ':' . $this->port) . ', database=' . $this->database . ", command: " . $name . ", errorMsg:".$data->errMsg.", data:".json_encode($params);
             Yii::error($message);
