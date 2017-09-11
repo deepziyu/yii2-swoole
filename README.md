@@ -69,7 +69,7 @@ require(__DIR__ . '/../../vendor/autoload.php');
 
 $config = [
     'id' => 'api-test-hello',
-    'setting' => [ 
+    'setting' => [
         // swoole_server 的配置。
         // @see 其他配置项见 https://wiki.swoole.com/wiki/page/274.html
         'daemonize'=>0,
@@ -91,7 +91,7 @@ $config = [
             require_once(__DIR__ . '/../../vendor/autoload.php');
             require_once(__DIR__ . '/../../yii-swoole/Yii.php');
             require(__DIR__ . '/../config/bootstrap.php');
-        
+
             $config = yii\helpers\ArrayHelper::merge(
                 require(__DIR__ . '/../config/main.php'),
                 require(__DIR__ . '/../config/main-local.php'),
@@ -106,7 +106,7 @@ $config = [
                     ],
                 ]
             );
-            
+
             return $config;
         },
     ],
@@ -126,7 +126,7 @@ php swoole.php start|stop|reload|reload-task
 
 ## TODO
 
-- MysqlPool 目前不支持事物 (transaction)。
+- MysqlPool 目前不支持事务 (transaction)。
 - MysqlPool、RedisPool 连接池用满了，目前是用 sleep() 进行排队等待，超过等待次数后，报异常。
 - MysqlPool 目前不支持主从。
 
@@ -137,7 +137,7 @@ php swoole.php start|stop|reload|reload-task
   1、 首次实例化会导致协程挂起。
 
   2、 如果 SQL 报错直接导致 work 进程终止。
-  
+
   BUG代码：
   ```php
       class OneModel extend ActiveRecord{
@@ -151,7 +151,7 @@ php swoole.php start|stop|reload|reload-task
           'some-att'=>'some-value',
       ]);
   ```
-  
+
 ## 链接
 
 [gitee 仓库](https://gitee.com/lizhenju/yii2-swoole)
