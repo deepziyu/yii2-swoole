@@ -149,5 +149,10 @@ php swoole.php start|stop|reload|reload-task
           'some-att'=>'some-value',
       ]);
   ```
+  
+## 链接
 
+[gitee 仓库](https://gitee.com/lizhenju/yii2-swoole)
+
+[gihub 仓库](https://github.com/deepziyu/yii2-swoole)
 
