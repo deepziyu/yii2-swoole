@@ -34,12 +34,12 @@ class SwooleCache extends Cache
      * the max expire of cache limited by this value
      * @var int
      */
-    public $maxLive = 30000;
+    public $maxLive = 3000000;
 
     /**
      * @var int Gc process will seelp $gcSleep second each 100000 times
      */
-    public $gcSleep = 1;
+    public $gcSleep = 0.01;
 
     /**
      * @var int the probability (parts per million) that garbage collection (GC) should be performed
@@ -66,37 +66,78 @@ class SwooleCache extends Cache
         static::$dataLength = $dataLength;
         $table = new Table($size);
         $table->column('expire', Table::TYPE_STRING, 11);
+        $table->column('nextId', Table::TYPE_STRING, 35);
         $table->column('data', Table::TYPE_STRING,static::$dataLength);
         $table->create();
         return $table;
     }
 
     protected function getValue($key){
+        return $this->getValueRec($key);
+    }
+
+    private function getValueRec($key,$nowtime = null)
+    {
+        if(empty($key)){
+            return '';
+        }
+        if(empty($nowtime)){
+            $nowtime = time();
+        }
+
         $column = $this->tableInstance->get($key);
         if($column == false){
             return false;
         }
-        if($column['expire'] < time()){
+        if($column['expire'] < $nowtime){
             $this->deleteValue($key);
             return false;
         }
-        return $column['data'];
+
+        $nextValue = $this->getValueRec($column['nextId'],$nowtime);
+        if($nextValue === false){
+            var_dump('false:'.$column['nextId']);
+            $this->tableInstance->del($key);
+            return false;
+        }
+
+        return $column['data'].$nextValue;
     }
 
     protected function setValue($key, $value, $duration){
         $this->gc();
-        if($duration < 1 || $duration > $this->maxLive){
-            $duration = $this->maxLive;
+        $expire = $duration + time();
+        $valueLength = strlen($value);
+        return (boolean) $this->setValueRec($key, $value, $expire, $valueLength);
+    }
+
+    private function setValueRec($key, &$value, $expire, $valueLength, $num = 0){
+        $start = $num*static::$dataLength;
+        if($start > $valueLength){
+            return '';
         }
-        if(strlen($value) > static::$dataLength){
-            Yii::info("key: [$key] is too long for SwooleCache");
-            //TODO Is time to use Redis cache as 2-level cache
+        $nextNum = $num+1;
+        $nextId = $this->setValueRec($key, $value, $expire, $valueLength, $nextNum);
+        if($nextId === false){
             return false;
         }
-        return $this->tableInstance->set($key,[
-            'expire' => $duration + time(),
-            'data' => $value
+        if($num){
+            $setKey = $key.$num;
+        }else{
+            $setKey = $key;
+        }
+        $result = $this->tableInstance->set($setKey,[
+            'expire' => $expire,
+            'nextId' => $nextId,
+            'data' => substr($value,$start,static::$dataLength)
         ]);
+        if($result === false){
+            if($nextId){
+                $this->deleteValue($nextId);
+            }
+            return false;
+        }
+        return $setKey;
     }
 
     protected function addValue($key, $value, $duration){
@@ -104,13 +145,24 @@ class SwooleCache extends Cache
     }
 
     protected function deleteValue($key){
+        return $this->deleteValueRec($key);
+    }
+
+    private function deleteValueRec($key)
+    {
+        $column = $column = $this->tableInstance->get($key);
+        if($column){
+            $nextId = $column['nextId'];
+            unset($column);
+            $nextId && $this->deleteValueRec($nextId);
+        }
         return $this->tableInstance->del($key);
     }
 
     protected function flushValues(){
         $table = $this->tableInstance;
         foreach ($table as $key => $column) {
-            $this->deleteValue($key);
+            $this->tableInstance->del($key);
         }
     }
 

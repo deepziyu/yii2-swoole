@@ -5,6 +5,7 @@ use Yii;
 use yii\base\Object;
 use \ReflectionClass;
 use yii\di\NotInstantiableException;
+use yii\helpers\Json;
 
 class Container extends \yii\di\Container
 {
@@ -31,11 +32,12 @@ class Container extends \yii\di\Container
         'deepziyu\yii\swoole\pool\MysqlPool',
         'deepziyu\yii\swoole\pool\RedisPool',
         'deepziyu\yii\swoole\web\ErrorHandler',
-        //'yii\web\UrlManager',
+        'deepziyu\yii\swoole\db\mysql\Schema',
+        'yii\web\UrlManager',
         'yii\i18n\I18N',
-
     ];
-    private static $_singletons_static  =  [];
+
+    private static $_singletons_static = [];
 
     /**
      * @inheritdoc
@@ -58,22 +60,15 @@ class Container extends \yii\di\Container
      */
     protected function build($class, $params, $config)
     {
-        if ( isset($this->classCompatible[$class]) ) {
+        if (isset($this->classCompatible[$class])) {
             $class = $this->classCompatible[$class];
-        }elseif( isset($this->classCompatible[trim($class,"\\")]) ){
-            $class = $this->classCompatible[trim($class,"\\")];
+        } elseif (isset($this->classCompatible[trim($class, "\\")])) {
+            $class = $this->classCompatible[trim($class, "\\")];
         }
         //var_dump("build-$class");
-        if($this->isStatic($class)){
-            if(isset(self::$_singletons_static[$class])){
-                //var_dump("reused-$class");
-                $obj = self::$_singletons_static[$class];
-            }else{
-                $obj =  $this->buildSave($class, $params, $config);
-                $this->setSingletonsStatic($class,$obj);
-            }
-        }else{
-            $obj =  $this->buildSave($class, $params, $config);
+        if (!$obj = $this->getSingletonsStatic($class, $params, $config)) {
+            $obj = $this->buildSave($class, $params, $config);
+            $this->setSingletonsStatic($class, $params, $config,$obj);
         }
         return $obj;
     }
@@ -86,7 +81,8 @@ class Container extends \yii\di\Container
      * @return object
      * @throws NotInstantiableException
      */
-    private function buildSave($class, $params, $config){
+    private function buildSave($class, $params, $config)
+    {
         /* @var $reflection ReflectionClass */
         list ($reflection, $dependencies) = $this->getDependencies($class);
 
@@ -106,11 +102,11 @@ class Container extends \yii\di\Container
             // set $config as the last parameter (existing one will be overwritten)
             $dependencies[count($dependencies) - 1] = $config;
             $instance = $reflection->newInstanceWithoutConstructor();
-            call_user_func_array([$instance,'__construct'],$dependencies);
+            call_user_func_array([$instance, '__construct'], $dependencies);
             return $instance;
         } else {
             $object = $reflection->newInstanceWithoutConstructor();
-            call_user_func_array([$object,'__construct'],$dependencies);
+            call_user_func_array([$object, '__construct'], $dependencies);
             foreach ($config as $name => $value) {
                 $object->$name = $value;
             }
@@ -118,25 +114,50 @@ class Container extends \yii\di\Container
         }
     }
 
+
+
+    public function getSingletonsStatic($class, $params, $config)
+    {
+        if (!$this->isStatic($class)) {
+            return null;
+        }
+        $key = $this->buildKey($class, $params, $config);
+        return self::$_singletons_static[$key] ?? null;
+    }
+
     /**
      * @param $class
+     * @param $params
+     * @param $config
      * @param $object
+     * @return null
      */
-    public function setSingletonsStatic($class, $object)
+    public function setSingletonsStatic($class, $params, $config, $object)
     {
-        self::$_singletons_static[$class] = $object;
+        if (!$this->isStatic($class)) {
+            return null;
+        }
+        $key = $this->buildKey($class, $params, $config);
+        self::$_singletons_static[$key] = $object;
+        return null;
     }
 
     /**
      * @param $class
      * @return bool
      */
-    protected function isStatic($class){
+    protected function isStatic($class)
+    {
         $success = false;
-        if(in_array($class,$this->classStatic)){
+        if (in_array($class, $this->classStatic)) {
             $success = true;
         }
         return $success;
+    }
+
+    protected function buildKey($class, $params, $config)
+    {
+        return $class . md5(Json::encode($params) . Json::encode($config));
     }
 
 
