@@ -258,7 +258,7 @@ abstract class Server
             return;
         }
         if(!isset($config['setting']['pid_file'])){
-            $config['setting']['pid_file'] = "/tmp/swoole-{$config['id']}.pid";
+            $config['setting']['pid_file'] = sys_get_temp_dir() . "/swoole-{$config['id']}.pid";
         }
         if(!isset($config['class'])){
             $config['class'] = 'deepziyu\yii\swoole\server\HttpServer';
