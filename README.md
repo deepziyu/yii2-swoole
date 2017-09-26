@@ -7,9 +7,9 @@ _为赋予 Yii2 框架协程异步能力而生。_
 
 ## 特性
 
-- 协程 MySQL 客户端、连接池
+- 协程 MySQL 客户端、连接池，支持主从、事务。
 
-- 协程 Redis 客户端、连接池、缓存
+- 协程 Redis 客户端、连接池、缓存 （目前未打算支持事务）
 
 - swoole_table 缓存组件
 
@@ -126,9 +126,9 @@ php swoole.php start|stop|reload|reload-task
 
 ## TODO
 
-- MysqlPool 目前不支持事务 (transaction)。
+- MysqlPool 目前不支持事务 (transaction)。 ( 已实现 )
 - MysqlPool、RedisPool 连接池用满了，目前是用 sleep() 进行排队等待，超过等待次数后，报异常。
-- MysqlPool 目前不支持主从。
+- MysqlPool 目前不支持主从。 ( 已实现 )
 
 ## 已知Bug
 
