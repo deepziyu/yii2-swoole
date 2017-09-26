@@ -42,6 +42,8 @@ class MysqlPoolPdo extends PDO
      */
     protected $_isTransaction = false;
 
+    protected $_bingId = null;
+
     /**
      * MysqlPoolPdo constructor.
      * @param $dsn
@@ -83,7 +85,7 @@ class MysqlPoolPdo extends PDO
      */
     public function doQuery($sql,$isExecute = false, $method, $fetchMode)
     {
-        $data = $this->pool->doQuery($sql);
+        $data = $this->pool->doQuery($sql,$this->_bingId);
         if($data->result === false && $data->errno){
             throw new PDOException($data->error,$data->errno);
         }
@@ -187,16 +189,28 @@ class MysqlPoolPdo extends PDO
     }
 
     /**
-     * Begins a transaction (turns off autocommit mode)
-     *
-     * @return void
+     * @return null
+     */
+    public function getBingId()
+    {
+        return $this->_bingId;
+    }
+
+    /**
+     * @inheritdoc
      */
     public function beginTransaction()
     {
         if ($this->isTransaction()) {
             throw new PDOException('There is already an active transaction');
         }
-        $this->_isTransaction = true;
+        $sock = $this->pool->begin();
+        if($sock === false){
+            return false;
+        }
+        Yii::$app->on('afterRequest',[$this,'onError']);
+        $this->_bingId = $sock;
+        return $this->_isTransaction = true;
     }
     /**
      * Returns true if the current process is in a transaction
@@ -217,7 +231,9 @@ class MysqlPoolPdo extends PDO
         if (!$this->isTransaction()) {
             throw new PDOException('There is no active transaction');
         }
-        return true;
+        $ret = $this->pool->commit($this->_bingId);
+        $this->_bingId = null;
+        return $ret;
     }
     /**
      * Rolls back a transaction
@@ -229,7 +245,18 @@ class MysqlPoolPdo extends PDO
         if (!$this->isTransaction()) {
             throw new PDOException('There is no active transaction');
         }
-        return true;
+        $ret = $this->pool->rollBack($this->_bingId);
+        $this->_bingId = null;
+        return $ret;
+    }
+
+    public function onError($event)
+    {
+        if($this->_bingId === null){
+            return ;
+        }
+        $this->pool->rollBack($this->_bingId);
+        $this->_bingId = null;
     }
 
     /**

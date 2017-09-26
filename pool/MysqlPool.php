@@ -62,18 +62,21 @@ class MysqlPool extends Component
      * @return ResultData
      * @throws \Exception
      */
-    public function doQuery($sql)
+    public function doQuery($sql, $bindID = null)
     {
-        $connect  = $this->getConnect();
+        if($bindID !== null){
+            $connect = $this->getBindConnect($bindID);
+        }else{
+            $connect  = $this->getConnect();
+        }
         $res = false;
         try{
             $res = $connect->query($sql);
         }catch (\Exception $exception){
             throw $exception;
         }finally{
-            $this->releaseConnect($connect);
+            if($bindID === null ) $this->releaseConnect($connect);
         }
-
         return new ResultData([
             'result' => $res,
             "affected_rows"=> $connect->affected_rows,
@@ -81,6 +84,56 @@ class MysqlPool extends Component
             "error"=> $connect->error,
             "errno"=> $connect->errno,
         ]);
+    }
+
+    public function begin()
+    {
+        $connect  = $this->getConnect();
+        if(!$connect->query("begin;")){
+            return false;
+        }
+        return (string) $connect->sock;
+    }
+
+    public function commit($bindID)
+    {
+        $connect = $this->getBindConnect($bindID);
+        $res = false;
+        try{
+            $res = $connect->query("commit;");
+        }catch (\Exception $exception){
+            throw $exception;
+        }finally{
+            $this->releaseConnect($connect);
+        }
+        return $res;
+    }
+
+    public function rollBack($bindID)
+    {
+        $connect = $this->getBindConnect($bindID);
+        $res = false;
+        try{
+            $res = $connect->query("rollback;");
+        }catch (\Exception $exception){
+            throw $exception;
+        }finally{
+            $this->releaseConnect($connect);
+        }
+        return $res;
+    }
+
+    /**
+     * @param $bindID
+     * @return MySQL
+     * @throws Exception
+     */
+    protected function getBindConnect($bindID)
+    {
+        if(!isset($this->resources[$bindID])){
+            throw new Exception("connect has close or not bind",[],1098);
+        }
+        return $this->resources[$bindID];
     }
 
     protected function getConnect($sleepTime = 0){
