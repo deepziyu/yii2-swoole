@@ -15,7 +15,7 @@
   },
   "require-dev": {
     "eaglewu/swoole-ide-helper": "dev-master",
-    "swoft/http-client ": "dev-master"
+    "swoft/http-client": "dev-master"
   },
   "autoload": {
     "psr-4": {
