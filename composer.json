@@ -14,7 +14,8 @@
     "yiisoft/yii2-redis": "~2.0.0"
   },
   "require-dev": {
-    "eaglewu/swoole-ide-helper": "dev-master"
+    "eaglewu/swoole-ide-helper": "dev-master",
+    "swoft/http-client ": "dev-master"
   },
   "autoload": {
     "psr-4": {

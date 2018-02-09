@@ -2,6 +2,8 @@
 
 _为赋予 Yii2 框架协程异步能力而生。_
 
+_后期开发会依赖 [Swoft 框架](https://gitee.com/lizhenju/yii2-swoole) 去实现功能，相信 Swoft 会是下一代优秀的框架。_
+
 此插件基于 swoole (v2.0) 底层实现的协程，改造 Yii2 的核心代码，使开发者无感知，以及在不改动业务代码的情况下，用上 swoole 的异步IO能力。
 
 
@@ -10,6 +12,8 @@ _为赋予 Yii2 框架协程异步能力而生。_
 - 协程 MySQL 客户端、连接池，支持主从、事务。
 
 - 协程 Redis 客户端、连接池、缓存 （目前未打算支持事务）
+
+- 协程 HttpClient , 依赖于 Swoft 实现
 
 - swoole_table 缓存组件
 
@@ -25,7 +29,7 @@ _为赋予 Yii2 框架协程异步能力而生。_
 1. hiredis
 2. composer
 3. PHP7.X
-4. Swoole2.0.9 且开启协程和异步 redis
+4. Swoole2.1 且开启协程和异步 Redis
 
 #### swoole install
 
@@ -124,6 +128,10 @@ deepziyu\yii\swoole\server\Server::run($config);
 php swoole.php start|stop|reload|reload-task
 ```
 
+## Usage HttpClient 
+
+HTTP 客户端的使用请参考 [Swotf 文档](https://doc.swoft.org/http.html)。
+
 ## TODO
 
 - MysqlPool 目前不支持事务 (transaction)。 ( 已实现 )
@@ -131,6 +139,18 @@ php swoole.php start|stop|reload|reload-task
 - MysqlPool 目前不支持主从。 ( 已实现 )
 
 ## 已知Bug
+
+- 迭代器将导致协程挂起。
+
+  BUG代码：
+  ```php
+      $models = User::find()->each(10);
+      foreach ($models as $model) { // Hang up in this row
+           $data[] = $model->toArray();
+      }
+  ```
+
+## 已解决Bug
 
 - new ActiveRecord([]); 中会触发 __set() 魔术方法中调用协程Client，导致两个问题：
 
@@ -156,5 +176,5 @@ php swoole.php start|stop|reload|reload-task
 
 [gitee 仓库](https://gitee.com/lizhenju/yii2-swoole)
 
-[gihub 仓库](https://github.com/deepziyu/yii2-swoole)
+[github 仓库](https://github.com/deepziyu/yii2-swoole)
 

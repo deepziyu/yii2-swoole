@@ -1,5 +1,5 @@
 <?php
-namespace deepziyu\yii\swoole\db;
+namespace deepziyu\yii\swoole\db\mysql;
 
 use PDO;
 use Yii;
@@ -7,7 +7,7 @@ use PDOException;
 use deepziyu\yii\swoole\pool\MysqlPool;
 use yii\helpers\ArrayHelper;
 
-class MysqlPoolPdo extends PDO
+class PoolPDO extends PDO
 {
     /**
      * attributes`s key for MysqlPool
@@ -75,6 +75,15 @@ class MysqlPoolPdo extends PDO
         $this->options = $options;
         $this->pool = Yii::createObject($options);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function prepare($statement, $driver_options = null)
+    {
+        return new PoolPDOStatement($statement,$this,$driver_options);
+    }
+
 
     /**
      * @param $sql

@@ -1,7 +1,7 @@
 <?php
 /**
- * \call_user_func() is not allow in swoole-cotroutine of v2.0.9 .
- * so we must resplace them by \Swoole\Coroutine::call_user_func().
+ * \call_user_func() is not allow in swoole-cotroutine of v2.0.10-stable .
+ * so we must replace them by \Swoole\Coroutine::call_user_func().
  * @see https://wiki.swoole.com/wiki/page/p-coroutine.html
  */
 namespace deepziyu\yii {

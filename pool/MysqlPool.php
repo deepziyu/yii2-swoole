@@ -58,7 +58,8 @@ class MysqlPool extends Component
     }
 
     /**
-     * @param $sql
+     * @param string $sql
+     * @param int $bindID the socket id of connect
      * @return ResultData
      * @throws \Exception
      */
@@ -76,6 +77,31 @@ class MysqlPool extends Component
             throw $exception;
         }finally{
             if($bindID === null ) $this->releaseConnect($connect);
+        }
+        return new ResultData([
+            'result' => $res,
+            "affected_rows"=> $connect->affected_rows,
+            "insert_id"=> $connect->insert_id,
+            "error"=> $connect->error,
+            "errno"=> $connect->errno,
+        ]);
+    }
+
+    public function prepareAndExecute(string $sql, array $inputParams = [], $bindID = null)
+    {
+        if($bindID !== null){
+            $connect = $this->getBindConnect($bindID);
+        }else{
+            $connect  = $this->getConnect();
+        }
+        $res = false;
+        try{
+            $stmt = $connect->prepare($sql);
+            $stmt && $res = $stmt->execute($inputParams);
+        }catch (\Exception $exception){
+            throw $exception;
+        }finally{
+            if($bindID === null) $this->releaseConnect($connect);
         }
         return new ResultData([
             'result' => $res,

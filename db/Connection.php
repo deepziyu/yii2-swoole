@@ -13,8 +13,8 @@ use yii\base\NotSupportedException;
  */
 class Connection extends \yii\db\Connection
 {
-    public $commandClass = 'deepziyu\yii\swoole\db\Command';
-    public $pdoClass = 'deepziyu\yii\swoole\db\MysqlPoolPdo';
+    //public $commandClass = 'deepziyu\yii\swoole\db\Command';
+    public $pdoClass = 'deepziyu\yii\swoole\db\mysql\PoolPdo';
     public $enableSchemaCache = true;
 
     public $schemaMap = [
