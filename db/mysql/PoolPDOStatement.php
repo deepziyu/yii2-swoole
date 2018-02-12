@@ -16,35 +16,37 @@ use yii\helpers\ArrayHelper;
  */
 class PoolPDOStatement extends PDOStatement
 {
-    protected $_sth;
+    protected $statement;
 
     /**
      * PDO Oci8 driver
      *
      * @var PoolPDO
      */
-    protected $_pdo;
+    protected $pdo;
 
     /**
      * Statement options
      *
      * @var array
      */
-    protected $_options = array();
+    protected $options = array();
 
     /**
      * Default fetch mode for this statement
      * @var integer
      */
-    protected $_fetchMode = null;
+    private $_fetchMode = null;
 
     /**
      * @var ResultData
      */
-    protected $_result = null;
+    private $_resultData = null;
 
 
-    protected $_boundColumns = [];
+    private $_boundColumns = [];
+
+    private $_index = 0;
 
     /**
      * PoolPDOStatement constructor.
@@ -54,10 +56,19 @@ class PoolPDOStatement extends PDOStatement
      */
     public function __construct(string $statement,PoolPDO $pdo, $options)
     {
-        $this->_sth = $statement;
-        $this->_pdo = $pdo;
-        $this->_options = $options;
+        $this->statement = $statement;
+        $this->pdo = $pdo;
+        $this->options = $options;
     }
+
+    /**
+     * @inheritdoc
+     */
+    function __destruct()
+    {
+        unset($this->_resultData,$this->_boundColumns,$this->statement);
+    }
+
 
     /**
      * Executes a prepared statement
@@ -68,26 +79,33 @@ class PoolPDOStatement extends PDOStatement
      */
     public function execute($inputParams = [])
     {
-        $bingID = $this->_pdo->getBingId();
-        $pool = $this->_pdo->pool;
+        $bingID = $this->pdo->getBingId();
+        $pool = $this->pdo->pool;
         if(!empty($inputParams)){
             $this->_boundColumns = $inputParams;
         }
         if(!empty($this->_boundColumns)){
             $this->prepareParamName();
-            $this->_result = $pool->prepareAndExecute($this->_sth,$this->_boundColumns,$bingID);
+            $this->_resultData = $pool->prepareAndExecute($this->statement,$this->_boundColumns,$bingID);
+            $this->pdo->setLastInsertId($this->_resultData->insert_id);
         }else{
-            $this->_result = $pool->doQuery($this->_sth,$bingID);
+            $this->_resultData = $pool->doQuery($this->statement,$bingID);
+        }
+        if($this->_resultData->result === false){
+            throw new PDOException($this->_resultData->error);
         }
         return true;
     }
 
     public function prepareParamName()
     {
-        $statement = $this->_sth;
+        $statement = $this->statement;
         if (strpos($statement, ':') !== false) {
             $data = [];
-            $this->_sth = preg_replace_callback('/:\w+\b/u', function ($matches) use (&$data) {
+            $this->statement = preg_replace_callback('/:\w+\b/u', function ($matches) use (&$data) {
+                if(!isset($this->_boundColumns[$matches[0]])){
+                    return $matches[0];
+                }
                 $data[] = $this->_boundColumns[$matches[0]];
                 return '?';
             }, $statement);
@@ -112,17 +130,37 @@ class PoolPDOStatement extends PDOStatement
         $cursor_offset = 0
     )
     {
+        static $styleUnsupport = [
+            'PDO::FETCH_BOUND' => PDO::FETCH_BOUND,
+            'PDO::FETCH_CLASS' => PDO::FETCH_CLASS,
+            'PDO::FETCH_INTO' => PDO::FETCH_INTO,
+            'PDO::FETCH_LAZY' => PDO::FETCH_LAZY,
+            'PDO::FETCH_NAMED' => PDO::FETCH_NAMED,
+            'PDO::FETCH_OBJ' => PDO::FETCH_OBJ,
+        ];
         if ($cursor_orientation !== PDO::FETCH_ORI_NEXT || $cursor_offset !== 0) {
             throw new PDOException('$cursor_orientation that is not PDO::FETCH_ORI_NEXT is not implemented for PoolPDOStatement::fetch()');
         }
-
-        if($fetch_style == PDO::FETCH_CLASS) {
-            throw new PDOException('PDO::FETCH_CLASS is not implemented for PoolPDOStatement::fetch()');
+        if(in_array($fetch_style,$styleUnsupport)) {
+            throw new PDOException(array_search($fetch_style,$styleUnsupport).'is not implemented for PoolPDOStatement::fetch()');
         }
-        if(empty($this->_result)){
+
+        if(
+            empty($this->_resultData)
+            || empty($result = $this->_resultData->result)
+            || empty($data = $result[$this->_index++] ?? [])
+        ){
             return false;
         }
-        return $this->_result->result[0];
+
+        if($fetch_style == PDO::FETCH_NUM){
+            $data = array_values($data);
+        }elseif ($fetch_style == PDO::FETCH_BOTH){
+            $dataRows = array_values($data);
+            $data = array_merge($data,$dataRows);
+        }
+
+        return $data;
     }
 
     /**
@@ -199,10 +237,10 @@ class PoolPDOStatement extends PDOStatement
      */
     public function rowCount()
     {
-        if(empty($this->_result)){
+        if(empty($this->_resultData)){
             return 0;
         }
-        return $this->_result->affected_rows;
+        return $this->_resultData->affected_rows;
     }
 
     /**
@@ -214,10 +252,11 @@ class PoolPDOStatement extends PDOStatement
      */
     public function fetchColumn($colNumber = 0)
     {
-        if( empty($this->_result->result[$colNumber]) ){
+        $result = $this->fetch(PDO::FETCH_NUM);
+        if ($result === false) {
             return false;
         }
-        return array_shift($this->_result->result[$colNumber]);
+        return $result[$colNumber] ?? false;
     }
 
     /**
@@ -235,15 +274,16 @@ class PoolPDOStatement extends PDOStatement
         $ctor_args = null
     )
     {
-        if(empty($this->_result)){
+        if(empty($this->_resultData) || empty($this->_resultData->result)){
             return [];
         }
         if($fetch_style == PDO::FETCH_COLUMN){
-            $keys = array_keys($this->_result->result[0]);
+            $keys = array_keys($this->_resultData->result[0]);
             $key = array_shift($keys);
-            return ArrayHelper::getColumn((array)$this->_result->result,$key);
+            unset($keys);
+            return ArrayHelper::getColumn((array)$this->_resultData->result,$key);
         }
-        return $this->_result->result;
+        return $this->_resultData->result;
     }
 
     /**
@@ -271,7 +311,7 @@ class PoolPDOStatement extends PDOStatement
      */
     public function errorCode()
     {
-        return $this->_result->errno;
+        return $this->_resultData->errno;
     }
 
     /**
@@ -281,11 +321,11 @@ class PoolPDOStatement extends PDOStatement
      */
     public function errorInfo()
     {
-        if ($this->_result->errno) {
+        if ($this->_resultData->errno) {
             return array(
                 'HY000',
-                $this->_result->errno,
-                $this->_result->error
+                $this->_resultData->errno,
+                $this->_resultData->error
             );
         }
 
@@ -302,7 +342,7 @@ class PoolPDOStatement extends PDOStatement
      */
     public function setAttribute($attribute, $value)
     {
-        $this->_options[$attribute] = $value;
+        $this->options[$attribute] = $value;
         return true;
     }
 
@@ -315,8 +355,8 @@ class PoolPDOStatement extends PDOStatement
      */
     public function getAttribute($attribute)
     {
-        if (isset($this->_options[$attribute])) {
-            return $this->_options[$attribute];
+        if (isset($this->options[$attribute])) {
+            return $this->options[$attribute];
         }
         return null;
     }
@@ -328,11 +368,11 @@ class PoolPDOStatement extends PDOStatement
      */
     public function columnCount()
     {
-        if(empty($this->_result) || empty($this->_result->result)){
+        if(empty($this->_resultData) || empty($this->_resultData->result)){
             return 0;
         }
 
-        return count(@$this->_result->result[0]);
+        return count(@$this->_resultData->result[0]);
     }
 
     public function getColumnMeta($column)
@@ -382,7 +422,7 @@ class PoolPDOStatement extends PDOStatement
      */
     public function closeCursor()
     {
-        unset($this->_result);
+        unset($this->_resultData);
         return true;
     }
 

@@ -111,6 +111,7 @@ class PoolPDO extends PDO
     /**
      * @param $data
      * @param $fetchMode
+     * @deprecated it instead by PDOStatement
      * @return bool
      */
     protected function fetch($data,$fetchMode)
@@ -126,6 +127,7 @@ class PoolPDO extends PDO
     /**
      * @param $data
      * @param $fetchMode
+     * @deprecated it instead by PDOStatement
      * @return array
      */
     protected function fetchAll($data,$fetchMode)
@@ -144,6 +146,7 @@ class PoolPDO extends PDO
     /**
      * @param $data
      * @param $fetchMode
+     * @deprecated it instead by PDOStatement
      * @return mixed|null
      */
     protected function fetchColumn($data,$fetchMode)
@@ -161,6 +164,11 @@ class PoolPDO extends PDO
     public function lastInsertId($name = null)
     {
         return $this->_lastInsertId;
+    }
+
+    public function setLastInsertId($value)
+    {
+        return $this->_lastInsertId = $value;
     }
 
     /**
@@ -194,7 +202,7 @@ class PoolPDO extends PDO
         if ($parameter_type !== PDO::PARAM_STR) {
             throw new PDOException('Only PDO::PARAM_STR is currently implemented for the $parameter_type of MysqlPoolPdo::quote()');
         }
-        return "'" . str_replace("'", "''", $string) . "'";
+        return $this->pool->escape($string);
     }
 
     /**
@@ -242,6 +250,7 @@ class PoolPDO extends PDO
         }
         $ret = $this->pool->commit($this->_bingId);
         $this->_bingId = null;
+        $this->_isTransaction = false;
         return $ret;
     }
     /**
@@ -256,6 +265,7 @@ class PoolPDO extends PDO
         }
         $ret = $this->pool->rollBack($this->_bingId);
         $this->_bingId = null;
+        $this->_isTransaction = false;
         return $ret;
     }
 
@@ -264,8 +274,7 @@ class PoolPDO extends PDO
         if($this->_bingId === null){
             return ;
         }
-        $this->pool->rollBack($this->_bingId);
-        $this->_bingId = null;
+        $this->rollBack();
     }
 
     /**

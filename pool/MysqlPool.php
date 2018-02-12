@@ -40,7 +40,7 @@ class MysqlPool extends Component
         $this->mysqlConfig = array_merge($this->defaultMysqlConfig,$this->mysqlConfig);
         $this->poolQueue = new \SplQueue();
         for($i =  0;$i<$this->minSize;$i++){
-            $conenct = $this->getConnect();
+            $conenct = $this->openOneConnect();
             $this->releaseConnect($conenct);
         }
         parent::init();
@@ -95,9 +95,17 @@ class MysqlPool extends Component
             $connect  = $this->getConnect();
         }
         $res = false;
+        $stmt = null;
         try{
             $stmt = $connect->prepare($sql);
             $stmt && $res = $stmt->execute($inputParams);
+
+            /**
+             * it is better to use statement object once,
+             * I do not want to provide any Socket-Resources to the developer,
+             * by a thought as all Link-Resources is the devils to some lovely developer.
+             */
+            unset($stmt);
         }catch (\Exception $exception){
             throw $exception;
         }finally{
@@ -112,10 +120,37 @@ class MysqlPool extends Component
         ]);
     }
 
+    public function escape(string $string) : string
+    {
+        $connect  = $this->getConnect();
+        $res = null;
+        try{
+            if(method_exists($connect,'escape')){
+                $res = $connect->escape($string);
+            }else{
+                \Yii::warning("MysqlPool::escape() is not effected! please check swoole compile option [--enable-mysqlnd]");
+                $res = "'" . str_replace("'", "''", $string) . "'";
+            }
+        }catch (\Exception $exception){
+            throw $exception;
+        }finally{
+            $this->releaseConnect($connect);
+        }
+        return $res ?? $string;
+    }
+
     public function begin()
     {
         $connect  = $this->getConnect();
-        if(!$connect->query("begin;")){
+        $res = false;
+        try{
+            $res = $connect->begin();
+        }catch (\Exception $exception){
+            throw $exception;
+        }finally{
+            $this->releaseConnect($connect);
+        }
+        if($res === false){
             return false;
         }
         return (string) $connect->sock;
@@ -126,7 +161,7 @@ class MysqlPool extends Component
         $connect = $this->getBindConnect($bindID);
         $res = false;
         try{
-            $res = $connect->query("commit;");
+            $res = $connect->commit();
         }catch (\Exception $exception){
             throw $exception;
         }finally{
@@ -140,7 +175,7 @@ class MysqlPool extends Component
         $connect = $this->getBindConnect($bindID);
         $res = false;
         try{
-            $res = $connect->query("rollback;");
+            $res = $connect->rollback();
         }catch (\Exception $exception){
             throw $exception;
         }finally{
