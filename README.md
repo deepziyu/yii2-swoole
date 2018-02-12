@@ -178,3 +178,6 @@ HTTP 客户端的使用请参考 [Swotf 文档](https://doc.swoft.org/http.html)
 
 [github 仓库](https://github.com/deepziyu/yii2-swoole)
 
+## Chat && Help
+
+Swoft 框架QQ交流群:548173319
