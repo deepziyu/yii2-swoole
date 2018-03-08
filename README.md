@@ -2,7 +2,7 @@
 
 _为赋予 Yii2 框架协程异步能力而生。_
 
-_后期开发会依赖 [Swoft 框架](https://gitee.com/lizhenju/yii2-swoole) 去实现功能，相信 Swoft 会是下一代优秀的框架。_
+_后期开发会依赖 [Swoft 框架](https://github.com/swoft-cloud) 去实现功能，相信 Swoft 会是下一代优秀的框架。_
 
 此插件基于 swoole (v2.0) 底层实现的协程，改造 Yii2 的核心代码，使开发者无感知，以及在不改动业务代码的情况下，用上 swoole 的异步IO能力。
 
