@@ -94,7 +94,7 @@ class Connection extends \yii\db\Connection
      * @param \yii\base\Object $object
      * @return bool|int|string
      */
-    protected function getComponentId(\yii\base\Object $object)
+    protected function getComponentId($object)
     {
         /** @var Application $app */
         $app = Yii::$app->getApplication();
