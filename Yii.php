@@ -2,7 +2,11 @@
 
 require (__DIR__ .'/../../yiisoft/yii2/BaseYii.php');
 require (__DIR__ . '/BaseYii.php');
-require (__DIR__. "/funReplace.php");
+
+// swoole4.0 has removed \Swoole\Coroutine::call_user_func_array()
+if(method_exists('\Swoole\Coroutine', "call_user_func_array")){
+    require (__DIR__. "/funReplace.php");
+}
 
 /**
  * Yii is a helper class serving common framework functionalities.

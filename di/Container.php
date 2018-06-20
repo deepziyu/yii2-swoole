@@ -35,6 +35,7 @@ class Container extends \yii\di\Container
         'deepziyu\yii\swoole\db\mysql\Schema',
         'yii\web\UrlManager',
         'yii\i18n\I18N',
+        'yii\caching\ArrayCache'
     ];
 
     private static $_singletons_static = [];
