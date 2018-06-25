@@ -20,7 +20,6 @@ class Container extends \yii\di\Container
         'yii\log\Dispatcher' => 'deepziyu\yii\swoole\log\Dispatcher',
         'yii\log\FileTarget' => 'deepziyu\yii\swoole\log\FileTarget',
         'yii\log\Logger' => 'deepziyu\yii\swoole\log\Logger',
-        'yii\web\Session' => 'deepziyu\yii\swoole\web\Session',
         'yii\db\Connection' => 'deepziyu\yii\swoole\db\Connection',
     ];
 

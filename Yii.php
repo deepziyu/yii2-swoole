@@ -17,4 +17,4 @@ class Yii extends deepziyu\yii\BaseYii
 
 }
 spl_autoload_register(['Yii', 'autoload'], true, true);
-Yii::$classMap = require(__DIR__ . '/classes.php');
+//Yii::$classMap = require(__DIR__ . '/classes.php');
