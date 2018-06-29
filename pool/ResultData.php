@@ -2,9 +2,9 @@
 namespace deepziyu\yii\swoole\pool;
 
 
-use yii\base\Object;
+use yii\base\BaseObject;
 
-class ResultData extends Object
+class ResultData extends BaseObject
 {
     public $result = false;
     public $affected_rows = 0;

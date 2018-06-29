@@ -2,7 +2,7 @@
 namespace deepziyu\yii\swoole\di;
 
 use Yii;
-use yii\base\Object;
+use yii\base\BaseObject;
 use \ReflectionClass;
 use yii\di\NotInstantiableException;
 use yii\helpers\Json;
@@ -78,7 +78,7 @@ class Container extends \yii\di\Container
      * @param $class
      * @param $params
      * @param $config
-     * @return object
+     * @return BaseObject
      * @throws NotInstantiableException
      */
     private function buildSave($class, $params, $config)

@@ -2,9 +2,9 @@
 namespace deepziyu\yii\swoole\pool;
 
 
-use yii\base\Object;
+use yii\base\BaseObject;
 
-class RedisResultData extends Object
+class RedisResultData extends BaseObject
 {
     public $result = false;
     public $errCode = 0;
