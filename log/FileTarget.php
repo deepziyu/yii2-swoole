@@ -4,6 +4,7 @@ namespace deepziyu\yii\swoole\log;
 use Yii;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
+use yii\helpers\VarDumper;
 use yii\log\FileTarget as YiiFileTarget;
 
 /**
@@ -36,8 +37,8 @@ class FileTarget extends YiiFileTarget
         $result = [];
         foreach ($context as $key => $value) {
             // some function is not allow in swoole
-            //$result[] = "\${$key} = " . VarDumper::dumpAsString($value);
-            $result[] = "\${$key} = " . Json::encode($value,JSON_UNESCAPED_UNICODE);
+            $result[] = "\${$key} = " . VarDumper::dumpAsString($value);
+            //$result[] = "\${$key} = " . Json::encode($value,JSON_UNESCAPED_UNICODE);
         }
         return implode("\n", $result);
     }
