@@ -122,6 +122,9 @@ class MysqlPool extends Component
 
     public function escape(string $string) : string
     {
+        if(empty($string)){
+            return $string;
+        }
         $connect  = $this->getConnect();
         $res = null;
         try{
